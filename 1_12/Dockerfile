@@ -1,0 +1,10 @@
+FROM ubuntu:22.04
+RUN apt-get update && apt-get install -y curl xz-utils ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL https://nodejs.org/dist/v16.20.2/node-v16.20.2-linux-x64.tar.xz | tar -xJ -C /usr/local --strip-components=1
+WORKDIR /usr/src/app
+COPY . .
+RUN npm install
+RUN npm run build
+RUN npm install -g serve
+EXPOSE 5001
+CMD ["serve", "-s", "-l", "5001", "build"]
