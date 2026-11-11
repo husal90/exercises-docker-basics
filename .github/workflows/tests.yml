@@ -31,6 +31,11 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Use a reachable apt mirror
+        run: |
+          sudo sed -i -E 's#^URIs: .*#URIs: http://mirrors.edge.kernel.org/ubuntu/#' /etc/apt/sources.list.d/ubuntu.sources || true
+          sudo sed -i -E 's#//[a-z.]*ubuntu\.com#//mirrors.edge.kernel.org#g' /etc/apt/sources.list || true
+
       - name: Run ${{ matrix.script }}
         working-directory: tests
         run: bash ${{ matrix.script }}
