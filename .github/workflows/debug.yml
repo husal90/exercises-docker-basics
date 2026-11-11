@@ -6,9 +6,13 @@ jobs:
     steps:
       - name: probe
         run: |
-          emit() { echo "::notice title=$1::$(echo "$2" | tail -12 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"; }
-          emit resolv "$(cat /etc/resolv.conf; docker run --rm ubuntu:24.04 cat /etc/resolv.conf; docker run --rm ubuntu:24.04 sh -c 'getent hosts archive.ubuntu.com; getent hosts nodejs.org; getent ahostsv4 archive.ubuntu.com' 2>&1)"
-          emit ipv4 "$(docker run --rm ubuntu:24.04 sh -c 'echo "Acquire::ForceIPv4 \"true\";" > /etc/apt/apt.conf.d/99; apt-get update 2>&1 | tail -4; apt-get install -y curl 2>&1 | tail -2')"
-          emit hostnet "$(docker run --rm --network=host ubuntu:24.04 sh -c 'apt-get update 2>&1 | tail -3; apt-get install -y curl 2>&1 | tail -2')"
-          emit azure "$(docker run --rm ubuntu:24.04 sh -c 'sed -i s/archive.ubuntu.com/azure.archive.ubuntu.com/g /etc/apt/sources.list.d/ubuntu.sources; apt-get update 2>&1 | tail -3; apt-get install -y curl 2>&1 | tail -2')"
-          emit dnsflag "$(docker run --rm --dns 8.8.8.8 ubuntu:24.04 sh -c 'apt-get update 2>&1 | tail -3; apt-get install -y curl 2>&1 | tail -2')"
+          r=""
+          for h in archive.ubuntu.com mirrors.edge.kernel.org mirrors.kernel.org mirror.ubuntu.com us.archive.ubuntu.com ftp.fau.de mirror.aarnet.edu.au deb.debian.org mirrors.mit.edu mirror.math.princeton.edu ubuntu.mirror.constant.com mirrors.xtom.com mirror.rackspace.com mirror.us.leaseweb.net packages.microsoft.com azure.archive.ubuntu.com ports.ubuntu.com registry.npmjs.org github.com; do
+            if getent hosts $h >/dev/null; then r="$r\nOK $h"; else r="$r\nNO $h"; fi
+          done
+          echo "::notice title=hostdns::$(printf "$r" | awk '{printf "%s%%0A", $0}')"
+          r=""
+          for h in archive.ubuntu.com mirrors.edge.kernel.org mirrors.kernel.org deb.debian.org mirror.us.leaseweb.net mirrors.xtom.com mirror.rackspace.com; do
+            if docker run --rm ubuntu:24.04 getent hosts $h >/dev/null; then r="$r\nOK $h"; else r="$r\nNO $h"; fi
+          done
+          echo "::notice title=ctrdns::$(printf "$r" | awk '{printf "%s%%0A", $0}')"
