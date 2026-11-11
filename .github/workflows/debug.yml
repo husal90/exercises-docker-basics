@@ -1,0 +1,15 @@
+name: debug
+on: push
+jobs:
+  dbg:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: build
+        run: |
+          for d in 1_07 1_12; do
+            out=$(docker build --progress=plain -t x$d $d 2>&1 | tail -25 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::notice title=build $d::$out"
+          done
+          out=$( (cd tests && bash test_1_07_curler.sh 2>&1 | tail -15) | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+          echo "::notice title=test107::$out"
