@@ -4,12 +4,11 @@ jobs:
   dbg:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - name: build
+      - name: probe
         run: |
-          for d in 1_07 1_12; do
-            out=$(docker build --progress=plain -t x$d $d 2>&1 | tail -25 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
-            echo "::notice title=build $d::$out"
-          done
-          out=$( (cd tests && bash test_1_07_curler.sh 2>&1 | tail -15) | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
-          echo "::notice title=test107::$out"
+          emit() { echo "::notice title=$1::$(echo "$2" | tail -12 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"; }
+          emit resolv "$(cat /etc/resolv.conf; docker run --rm ubuntu:24.04 cat /etc/resolv.conf; docker run --rm ubuntu:24.04 sh -c 'getent hosts archive.ubuntu.com; getent hosts nodejs.org; getent ahostsv4 archive.ubuntu.com' 2>&1)"
+          emit ipv4 "$(docker run --rm ubuntu:24.04 sh -c 'echo "Acquire::ForceIPv4 \"true\";" > /etc/apt/apt.conf.d/99; apt-get update 2>&1 | tail -4; apt-get install -y curl 2>&1 | tail -2')"
+          emit hostnet "$(docker run --rm --network=host ubuntu:24.04 sh -c 'apt-get update 2>&1 | tail -3; apt-get install -y curl 2>&1 | tail -2')"
+          emit azure "$(docker run --rm ubuntu:24.04 sh -c 'sed -i s/archive.ubuntu.com/azure.archive.ubuntu.com/g /etc/apt/sources.list.d/ubuntu.sources; apt-get update 2>&1 | tail -3; apt-get install -y curl 2>&1 | tail -2')"
+          emit dnsflag "$(docker run --rm --dns 8.8.8.8 ubuntu:24.04 sh -c 'apt-get update 2>&1 | tail -3; apt-get install -y curl 2>&1 | tail -2')"
